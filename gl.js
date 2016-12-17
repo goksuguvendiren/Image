@@ -14,9 +14,6 @@ var cubeTexture;
 //
 // start
 //
-// Called when the canvas is created to get the ball rolling.
-// Figuratively, that is. There's nothing moving in this demo.
-//
 function start() 
 {
     canvas = document.getElementById("glcanvas");
@@ -26,12 +23,7 @@ function start()
     // Only continue if WebGL is available and working
 
     if (gl) {
-        gl.clearColor(0.5, 0.5, 0.5, 1.0);  // Clear to black, fully opaque
-        gl.clearDepth(1.0);                 // Clear everything
-        gl.enable(gl.DEPTH_TEST);           // Enable depth testing
-        gl.depthFunc(gl.LEQUAL);            // Near things obscure far things
-        gl.viewport(0, 0, 640, 480);
-
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
 
         initShaders();
         initBuffers();
@@ -45,27 +37,37 @@ function start()
     }
 }
 
+
 //
-// initWebGL
+// initShaders
 //
-// Initialize WebGL, returning the GL context or null if
-// WebGL isn't available or could not be initialized.
+// Initialize the shaders, so WebGL knows how to light our scene.
 //
-function initWebGL() 
+function initShaders() 
 {
-    gl = null;
+    var fragmentShader = getShader(gl, "shader-fs");
+    var vertexShader = getShader(gl, "shader-vs");
 
-    try {
-        gl = canvas.getContext("experimental-webgl");
-    }
-    catch(e) {
+    // Create the shader program
+
+    shaderProgram = gl.createProgram();
+    gl.attachShader(shaderProgram, vertexShader);
+    gl.attachShader(shaderProgram, fragmentShader);
+    gl.linkProgram(shaderProgram);
+
+    // If creating the shader program failed, alert
+
+    if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+        alert("Unable to initialize the shader program: " + gl.getProgramInfoLog(shader));
     }
 
-    // If we don't have a GL context, give up now
+    gl.useProgram(shaderProgram);
 
-    if (!gl) {
-        alert("Unable to initialize WebGL. Your browser may not support it.");
-    }
+    vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+    gl.enableVertexAttribArray(vertexPositionAttribute);
+
+    textureCoordAttribute = gl.getAttribLocation(shaderProgram, "aTextureCoord");
+    gl.enableVertexAttribArray(textureCoordAttribute);
 }
 
 //
@@ -125,11 +127,14 @@ function initBuffers()
 
 function drawScene() 
 {
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.clear(gl.COLOR_BUFFER_BIT);// | gl.DEPTH_BUFFER_BIT);
 
-    perspectiveMatrix = makePerspective(45, 640.0/480.0, 0.1, 100.0);
+    // perspectiveMatrix = makePerspective(45, 640.0/480.0, 0.1, 100.0);
+    // loadIdentity();
+    // mvTranslate([-0.0, 0.0, -6.0]);
+
     loadIdentity();
-    mvTranslate([-0.0, 0.0, -6.0]);
+    perspectiveMatrix = mvMatrix;
 
     // Draw the cube by binding the array buffer to the cube's vertices
     // array, setting attributes, and pushing it to GL.
@@ -142,7 +147,6 @@ function drawScene()
     gl.vertexAttribPointer(textureCoordAttribute, 2, gl.FLOAT, false, 0, 0);
 
     // Specify the texture to map onto the faces.
-
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, cubeTexture);
@@ -162,7 +166,7 @@ function initTextures()
     cubeTexture = gl.createTexture();
     cubeImage = new Image();
     cubeImage.onload = function() { handleTextureLoaded(cubeImage, cubeTexture); }
-    cubeImage.src = "cubetexture.png";
+    cubeImage.src = "B1.png";
 }
 
 function handleTextureLoaded(image, texture) 
@@ -170,42 +174,14 @@ function handleTextureLoaded(image, texture)
     console.log("textuuure !");
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
-    gl.generateMipmap(gl.TEXTURE_2D);
-    gl.bindTexture(gl.TEXTURE_2D, null);
-}
-
-//
-// initShaders
-//
-// Initialize the shaders, so WebGL knows how to light our scene.
-//
-function initShaders() 
-{
-    var fragmentShader = getShader(gl, "shader-fs");
-    var vertexShader = getShader(gl, "shader-vs");
-
-    // Create the shader program
-
-    shaderProgram = gl.createProgram();
-    gl.attachShader(shaderProgram, vertexShader);
-    gl.attachShader(shaderProgram, fragmentShader);
-    gl.linkProgram(shaderProgram);
-
-    // If creating the shader program failed, alert
-
-    if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-        alert("Unable to initialize the shader program: " + gl.getProgramInfoLog(shader));
-    }
-
-    gl.useProgram(shaderProgram);
-
-    vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
-    gl.enableVertexAttribArray(vertexPositionAttribute);  
-
-    textureCoordAttribute = gl.getAttribLocation(shaderProgram, "aTextureCoord");
-    gl.enableVertexAttribArray(textureCoordAttribute);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    // gl.generateMipmap(gl.TEXTURE_2D);
+    // gl.bindTexture(gl.TEXTURE_2D, null);  // WHY ?
 }
 
 //
@@ -264,6 +240,30 @@ function getShader(gl, id)
     }
 
     return shader;
+}
+
+
+//
+// initWebGL
+//
+// Initialize WebGL, returning the GL context or null if
+// WebGL isn't available or could not be initialized.
+//
+function initWebGL() 
+{
+    gl = null;
+
+    try {
+        gl = canvas.getContext("experimental-webgl");
+    }
+    catch(e) {
+    }
+
+    // If we don't have a GL context, give up now
+
+    if (!gl) {
+        alert("Unable to initialize WebGL. Your browser may not support it.");
+    }
 }
 
 //
