@@ -11,6 +11,34 @@ var perspectiveMatrix;
 var cubeImage;
 var cubeTexture;
 
+var linearScaleCoeff;
+
+function mouseOver()
+{
+	console.log("helooo");
+}
+
+function dragOver()
+{
+	console.log("hmm");
+}
+
+function mouseWheel()
+{
+	e = window.event;
+	var delta = e.wheelDelta;
+
+	if (delta > 0) {
+		console.log("down down down");
+		linearScaleCoeff -= 0.01;
+		linearScaleCoeff = max(0, linearScaleCoeff);
+	}
+	else {
+		console.log("up up up");
+		linearScaleCoeff += 0.01;
+	}
+}
+
 //
 // start
 //
@@ -25,6 +53,7 @@ function start()
     if (gl) {
         gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
 
+        init();
         initShaders();
         initBuffers();
         initTextures();
@@ -33,10 +62,17 @@ function start()
     }
 
     else {
-        alert("GL couldn't be initialized !");
+        alert("GL couldn't be initialized!");
     }
 }
 
+function init()
+{
+    loadIdentity();
+    perspectiveMatrix = mvMatrix;
+
+    linearScaleCoeff = 1.0;
+}
 
 //
 // initShaders
@@ -127,14 +163,7 @@ function initBuffers()
 
 function drawScene() 
 {
-    gl.clear(gl.COLOR_BUFFER_BIT);// | gl.DEPTH_BUFFER_BIT);
-
-    // perspectiveMatrix = makePerspective(45, 640.0/480.0, 0.1, 100.0);
-    // loadIdentity();
-    // mvTranslate([-0.0, 0.0, -6.0]);
-
-    loadIdentity();
-    perspectiveMatrix = mvMatrix;
+    gl.clear(gl.COLOR_BUFFER_BIT);
 
     // Draw the cube by binding the array buffer to the cube's vertices
     // array, setting attributes, and pushing it to GL.
@@ -154,8 +183,13 @@ function drawScene()
 
     // Draw the cube.
 
+    gl.useProgram(shaderProgram);
+	gl.uniform1f(gl.getUniformLocation(shaderProgram, "val"), linearScaleCoeff);
+
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVerticesIndexBuffer);
     setMatrixUniforms();
+
+
     gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 }
 

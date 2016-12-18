@@ -11,12 +11,14 @@
 
 		<script id="shader-fs" type="x-shader/x-fragment">
 			varying highp vec2 vTextureCoord;
-			  
+			
+			uniform highp float val;  
 			uniform sampler2D uSampler;
 			  
 			void main(void)
 			{
-				gl_FragColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
+				highp vec4 color = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
+				gl_FragColor = vec4(color.r * val, color.r * val, color.r * val, 1.0);
 			}
 
 		</script>
@@ -43,7 +45,7 @@
 	</head>
 
   <body onload="start()">
-		<canvas id="glcanvas" width="640" height="480">
+		<canvas id="glcanvas" width="640" height="480" onmouseover="mouseOver()" ondragover="dragOver()" onmousewheel="mouseWheel()">
 			Your browser doesn't appear to support the HTML5 <code>&lt;canvas&gt;</code> element.
 		</canvas>
   </body>
